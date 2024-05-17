@@ -26,16 +26,25 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: 更新镜像源
+      - name: update
         run: sudo apt update
 
-      - name: 安装依赖
+      - name: install build
         run: sudo apt install -y bc debhelper dosfstools dpkg gcc-aarch64-linux-gnu gcc-riscv64-linux-gnu iasl mtools nasm pve-qemu-kvm python3 python3-distutils python3-pexpect uuid-dev xorriso lintian
-      - name: 测试构建
+      - name: test make
         run: make
         
-      - name: 打包工作件并上传
+      - name: upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: pve-edk2-firmware
           path: ./*.deb
+
+      - name: upload-release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2.9.0
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: Binaries/*.zip
+          tag: ${{ github.ref }}
+          file_glob: true
