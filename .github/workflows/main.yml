@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  PROJECT_TYPE: UEFI
+  FORCE_INSTALL: 1
+  HAS_OPENSSL_BUILD: 1
+  HAS_OPENSSL_W32BUILD: 0
+  WERROR: 1
+
+jobs:
+  build-0:
+    name: Debian linux
+    runs-on: Linux
+    env:
+      JOB_TYPE: BUILD
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: 更新镜像源
+        run: sudo apt update
+
+      - name: 安装依赖
+        run: sudo apt install -y bc debhelper dosfstools dpkg gcc-aarch64-linux-gnu gcc-riscv64-linux-gnu iasl mtools nasm pve-qemu-kvm python3 python3-distutils python3-pexpect uuid-dev xorriso lintian
+      - name: 测试构建
+        run: make
+        
+      - name: 打包工作件并上传
+        uses: actions/upload-artifact@v4
+        with:
+          name: pve-edk2-firmware
+          path: ./*.deb
