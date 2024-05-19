@@ -31,7 +31,7 @@ jobs:
 
       - name: install build
         run: sudo apt install -y bc debhelper dosfstools dpkg gcc-aarch64-linux-gnu gcc-riscv64-linux-gnu iasl mtools nasm pve-qemu-kvm python3 python3-distutils python3-pexpect uuid-dev xorriso lintian
-      - name: test make
+      - name: make deb
         run: make
         
       - name: upload artifact
@@ -45,6 +45,6 @@ jobs:
         uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2.9.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: Binaries/*.zip
+          file: ./*.deb
           tag: ${{ github.ref }}
           file_glob: true
