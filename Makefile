@@ -24,7 +24,7 @@ $(BUILDDIR): $(SRCDIR)/Readme.md
 	cp -rpa $(SRCDIR) $@.tmp
 	rm -rf $@.tmp/ArmPkg/Library/GccLto/*.a
 	cp -a debian $@.tmp
-	echo "git clone git://git.proxmox.com/git/pve-edk2-firmware.git\\ngit checkout $(shell git rev-parse HEAD)" > $@.tmp/debian/SOURCE
+	echo "git clone https://github.com/wy414012/pve-edk2-firmware.git\\ngit checkout $(shell git rev-parse HEAD)" > $@.tmp/debian/SOURCE
 	mv $@.tmp $@
 
 .PHONY: deb
