@@ -52,13 +52,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pve-edk2-firmware
-          path: ./{*.deb,*.changes,*.buildinfo}
+          path: ./*.deb,*.changes,*.buildinfo
 
       - name: upload-release
         if: github.event_name == 'release'
         uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2.9.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./{*.deb,*.changes,*.buildinfo}
+          file: ./*.deb,*.changes,*.buildinfo
           tag: ${{ github.ref }}
           file_glob: true
