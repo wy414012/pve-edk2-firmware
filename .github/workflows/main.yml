@@ -15,9 +15,9 @@ env:
   WERROR: 1
 
 jobs:
-  build-0:
-    name: Debian linux
-    runs-on: Linux
+  build:
+    name: edk2-test
+    runs-on: edk2-test
     env:
       JOB_TYPE: BUILD
       HOMEBREW_NO_INSTALL_CLEANUP: 1

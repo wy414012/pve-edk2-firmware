@@ -1,23 +1,17 @@
-pve-edk2-firmware (4.2023.08-5) bookworm; urgency=medium
+pve-edk2-firmware (5.2024.02-1) bookworm; urgency=medium
 
-  * 切换库地址为github用于CI机器构建
-  * 添加英特尔核心显卡直通GOP初始化相关补丁
-  * 添加示范用于构建的GOP和VBT
-  * 使用CI自动构建，与发布
-  * 修改EDK中OEM构建字符串
-  * 暂时移除补丁直接构建入gop和vbt支持
-  * 合并CVE补丁，解决构建中的警告
-  * 补丁修改gop为只创建空壳inf，不参与构建
-  * vbt同样修改为只创建空壳inf文件，不参与构建
-  * 在debian工作目录中移除不参与构建的gop相关，保留存档在主目录中
+  * 暂时分离库，替换logo
+  * 测试同步edk2最新提交用于测试用途
+  * 调整版本号和edk2稳定版一致edk2-稳定版202402，发布日期2024-02-23
+  * 合并了CVE相关补丁，使其不再报错警告，多次重复补丁的bug，将补丁调整到最新edk2支持中
+  * 补丁文件0001-Merge-patches-edk2-stable202402.patch
+  * 修改构建文件，方便CI正确处理子模块，提交变更等事件，避免由于子模块配置缓存，造成的未切换到指定提交bug
 
- -- Yaming OEM Proxmox <ymwlpoolc@qq.com>  Wed, 22 May 2024 11:16:21 +0800
+ -- Yaming Network <ymwlpoolc@qq.com>  Wed, 22 May 2024 12:00:45 +0800
 
 pve-edk2-firmware (4.2023.08-4) bookworm; urgency=medium
 
   * fix CVE-2023-48733: disable EFI shell in SB mode
-
-  * 切换库地址为github用于CI机器构建
 
  -- Proxmox Support Team <support@proxmox.com>  Thu, 15 Feb 2024 08:56:32 +0100
 

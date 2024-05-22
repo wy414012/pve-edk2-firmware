@@ -1,0 +1,1629 @@
+From 65b16449a35378b8eb9e9f8a54c4222f55b66fea Mon Sep 17 00:00:00 2001
+From: Yaming Network <ymwlpoolc@qq.com>
+Date: Wed, 22 May 2024 12:00:45 +0800
+Subject: [PATCH] Merge patches edk2-stable202402
+
+---
+ ArmPkg/Drivers/CpuDxe/CpuDxe.c                |   2 -
+ ArmPkg/Drivers/CpuDxe/CpuDxe.h                |   3 -
+ ArmPkg/Drivers/CpuDxe/CpuDxe.inf              |   2 -
+ ArmVirtPkg/ArmVirt.dsc.inc                    |   2 +-
+ BaseTools/Conf/tools_def.template             |   4 +-
+ BaseTools/Source/C/GNUmakefile                |   1 -
+ OvmfPkg/IgdAssignmentDxe/IgdAssignment.c      | 594 ++++++++++++++++++
+ OvmfPkg/IgdAssignmentDxe/IgdAssignment.inf    |  43 ++
+ .../Include/IndustryStandard/AssignedIgd.h    |  51 ++
+ .../Include/IndustryStandard/IgdOpRegion.h    | 181 ++++++
+ OvmfPkg/Include/Protocol/PlatformGopPolicy.h  |  68 ++
+ OvmfPkg/IntelGop/IntelGopDriver.inf           |  17 +
+ OvmfPkg/OvmfPkg.dec                           |   3 +-
+ OvmfPkg/OvmfPkgIa32.fdf                       |   9 +
+ OvmfPkg/OvmfPkgIa32X64.dsc                    |   5 +-
+ OvmfPkg/OvmfPkgIa32X64.fdf                    |  15 +-
+ OvmfPkg/OvmfPkgX64.dsc                        |   4 +-
+ OvmfPkg/OvmfPkgX64.fdf                        |  14 +-
+ OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.c | 206 ++++++
+ .../PlatformGopPolicy/PlatformGopPolicy.inf   |  50 ++
+ OvmfPkg/Vbt/Vbt.inf                           |  17 +
+ ShellPkg/Application/Shell/Shell.c            |  14 +
+ ShellPkg/Application/Shell/Shell.h            |   3 +
+ ShellPkg/Application/Shell/Shell.inf          |   2 +
+ ShellPkg/ShellPkg.dsc                         |   1 +
+ 25 files changed, 1295 insertions(+), 16 deletions(-)
+ create mode 100644 OvmfPkg/IgdAssignmentDxe/IgdAssignment.c
+ create mode 100644 OvmfPkg/IgdAssignmentDxe/IgdAssignment.inf
+ create mode 100644 OvmfPkg/Include/IndustryStandard/AssignedIgd.h
+ create mode 100644 OvmfPkg/Include/IndustryStandard/IgdOpRegion.h
+ create mode 100644 OvmfPkg/Include/Protocol/PlatformGopPolicy.h
+ create mode 100644 OvmfPkg/IntelGop/IntelGopDriver.inf
+ create mode 100644 OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.c
+ create mode 100644 OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.inf
+ create mode 100644 OvmfPkg/Vbt/Vbt.inf
+
+diff --git a/ArmPkg/Drivers/CpuDxe/CpuDxe.c b/ArmPkg/Drivers/CpuDxe/CpuDxe.c
+index fc63e52784..3441fd4396 100644
+--- a/ArmPkg/Drivers/CpuDxe/CpuDxe.c
++++ b/ArmPkg/Drivers/CpuDxe/CpuDxe.c
+@@ -331,8 +331,6 @@ CpuDxeInitialize (
+                   &mCpuHandle,
+                   &gEfiCpuArchProtocolGuid,
+                   &mCpu,
+-                  &gEfiMemoryAttributeProtocolGuid,
+-                  &mMemoryAttribute,
+                   NULL
+                   );
+ 
+diff --git a/ArmPkg/Drivers/CpuDxe/CpuDxe.h b/ArmPkg/Drivers/CpuDxe/CpuDxe.h
+index c6613b939a..39e1bbed44 100644
+--- a/ArmPkg/Drivers/CpuDxe/CpuDxe.h
++++ b/ArmPkg/Drivers/CpuDxe/CpuDxe.h
+@@ -30,12 +30,9 @@
+ #include <Protocol/Cpu.h>
+ #include <Protocol/DebugSupport.h>
+ #include <Protocol/LoadedImage.h>
+-#include <Protocol/MemoryAttribute.h>
+ 
+ extern BOOLEAN  mIsFlushingGCD;
+ 
+-extern EFI_MEMORY_ATTRIBUTE_PROTOCOL  mMemoryAttribute;
+-
+ /**
+   This function registers and enables the handler specified by InterruptHandler for a processor
+   interrupt or exception type specified by InterruptType. If InterruptHandler is NULL, then the
+diff --git a/ArmPkg/Drivers/CpuDxe/CpuDxe.inf b/ArmPkg/Drivers/CpuDxe/CpuDxe.inf
+index 7d8132200e..173a3bee26 100644
+--- a/ArmPkg/Drivers/CpuDxe/CpuDxe.inf
++++ b/ArmPkg/Drivers/CpuDxe/CpuDxe.inf
+@@ -23,7 +23,6 @@
+   CpuDxe.h
+   CpuMmuCommon.c
+   Exception.c
+-  MemoryAttribute.c
+ 
+ [Sources.ARM]
+   Arm/Mmu.c
+@@ -55,7 +54,6 @@
+ 
+ [Protocols]
+   gEfiCpuArchProtocolGuid
+-  gEfiMemoryAttributeProtocolGuid
+ 
+ [Guids]
+   gEfiDebugImageInfoTableGuid
+diff --git a/ArmVirtPkg/ArmVirt.dsc.inc b/ArmVirtPkg/ArmVirt.dsc.inc
+index 2bc6a29eb1..033575241e 100644
+--- a/ArmVirtPkg/ArmVirt.dsc.inc
++++ b/ArmVirtPkg/ArmVirt.dsc.inc
+@@ -378,7 +378,7 @@
+   # reserved ones, with the exception of LoaderData regions, of which OS loaders
+   # (i.e., GRUB) may assume that its contents are executable.
+   #
+-  gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy|0xC000000000007FD5
++  gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy|0xC000000000007FD1
+ 
+   gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard|TRUE
+ 
+diff --git a/BaseTools/Conf/tools_def.template b/BaseTools/Conf/tools_def.template
+index c34ecfd557..cb0451512c 100755
+--- a/BaseTools/Conf/tools_def.template
++++ b/BaseTools/Conf/tools_def.template
+@@ -778,10 +778,10 @@ DEFINE GCC_LOONGARCH64_RC_FLAGS    = -I binary -O elf64-loongarch     -B loongar
+ # GCC Build Flag for included header file list generation
+ DEFINE GCC_DEPS_FLAGS              = -MMD -MF $@.deps
+ 
+-DEFINE GCC48_ALL_CC_FLAGS            = DEF(GCC_ALL_CC_FLAGS) -ffunction-sections -fdata-sections -DSTRING_ARRAY_NAME=$(BASE_NAME)Strings
++DEFINE GCC48_ALL_CC_FLAGS            = DEF(GCC_ALL_CC_FLAGS) -ffunction-sections -fdata-sections -fno-stack-protector -DSTRING_ARRAY_NAME=$(BASE_NAME)Strings
+ DEFINE GCC48_IA32_X64_DLINK_COMMON   = -nostdlib -Wl,-n,-q,--gc-sections -z common-page-size=0x20
+ DEFINE GCC48_IA32_CC_FLAGS           = DEF(GCC48_ALL_CC_FLAGS) -m32 -march=i586 -malign-double -fno-stack-protector -D EFI32 -fno-asynchronous-unwind-tables -Wno-address -fno-omit-frame-pointer
+-DEFINE GCC48_X64_CC_FLAGS            = DEF(GCC48_ALL_CC_FLAGS) -m64 -fno-stack-protector "-DEFIAPI=__attribute__((ms_abi))" -maccumulate-outgoing-args -mno-red-zone -Wno-address -mcmodel=small -fpie -fno-asynchronous-unwind-tables -Wno-address  -fno-omit-frame-pointer
++DEFINE GCC48_X64_CC_FLAGS            = DEF(GCC48_ALL_CC_FLAGS) -m64 -march=x86-64 -fno-stack-protector "-DEFIAPI=__attribute__((ms_abi))" -maccumulate-outgoing-args -mno-red-zone -Wno-address -mcmodel=small -fpie -fno-asynchronous-unwind-tables -Wno-address
+ DEFINE GCC48_IA32_X64_ASLDLINK_FLAGS = DEF(GCC48_IA32_X64_DLINK_COMMON) -Wl,--entry,ReferenceAcpiTable -u ReferenceAcpiTable
+ DEFINE GCC48_IA32_X64_DLINK_FLAGS    = DEF(GCC48_IA32_X64_DLINK_COMMON) -Wl,--entry,$(IMAGE_ENTRY_POINT) -u $(IMAGE_ENTRY_POINT) -Wl,-Map,$(DEST_DIR_DEBUG)/$(BASE_NAME).map,--whole-archive
+ DEFINE GCC48_IA32_DLINK2_FLAGS       = -Wl,--defsym=PECOFF_HEADER_SIZE=0x220 DEF(GCC_DLINK2_FLAGS_COMMON)
+diff --git a/BaseTools/Source/C/GNUmakefile b/BaseTools/Source/C/GNUmakefile
+index 5275f657ef..39d7199753 100644
+--- a/BaseTools/Source/C/GNUmakefile
++++ b/BaseTools/Source/C/GNUmakefile
+@@ -51,7 +51,6 @@ all: makerootdir subdirs
+ LIBRARIES = Common
+ VFRAUTOGEN = VfrCompile/VfrLexer.h
+ APPLICATIONS = \
+-  BrotliCompress \
+   VfrCompile \
+   EfiRom \
+   GenFfs \
+diff --git a/OvmfPkg/IgdAssignmentDxe/IgdAssignment.c b/OvmfPkg/IgdAssignmentDxe/IgdAssignment.c
+new file mode 100644
+index 0000000000..67f4fc8cd9
+--- /dev/null
++++ b/OvmfPkg/IgdAssignmentDxe/IgdAssignment.c
+@@ -0,0 +1,594 @@
++/** @file
++  This driver enables Intel Graphics Device (IGD) assignment with vfio-pci
++  according to QEMU's "docs/igd-assign.txt" specification.
++
++  Copyright (C) 2018, Red Hat, Inc.
++
++  This program and the accompanying materials are licensed and made available
++  under the terms and conditions of the BSD License which accompanies this
++  distribution. The full text of the license may be found at
++  http://opensource.org/licenses/bsd-license.php
++
++  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, WITHOUT
++  WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
++**/
++
++#include <IndustryStandard/Pci22.h>
++#include <Library/BaseMemoryLib.h>
++#include <Library/DebugLib.h>
++#include <Library/PrintLib.h>
++#include <Library/QemuFwCfgLib.h>
++#include <Library/UefiBootServicesTableLib.h>
++#include <Protocol/PciIo.h>
++
++#include <IndustryStandard/AssignedIgd.h>
++#include <IndustryStandard/IgdOpRegion.h>
++
++//
++// structure that collects information from PCI config space that is needed to
++// evaluate whether IGD assignment applies to the device
++//
++typedef struct {
++  UINT16 VendorId;
++  UINT8  ClassCode[3];
++  UINTN  Segment;
++  UINTN  Bus;
++  UINTN  Device;
++  UINTN  Function;
++  CHAR8  Name[sizeof "0000:00:02.0"];
++} CANDIDATE_PCI_INFO;
++
++//
++// selector and size of ASSIGNED_IGD_FW_CFG_OPREGION
++//
++STATIC FIRMWARE_CONFIG_ITEM mOpRegionItem;
++STATIC UINTN                mOpRegionSize;
++//
++// value read from ASSIGNED_IGD_FW_CFG_BDSM_SIZE, converted to UINTN
++//
++STATIC UINTN                mBdsmSize;
++//
++// gBS->LocateProtocol() helper for finding the next unhandled PciIo instance
++//
++STATIC VOID                 *mPciIoTracker;
++
++
++/**
++  Populate the CANDIDATE_PCI_INFO structure for a PciIo protocol instance.
++
++  @param[in] PciIo     EFI_PCI_IO_PROTOCOL instance to interrogate.
++
++  @param[out] PciInfo  CANDIDATE_PCI_INFO structure to fill.
++
++  @retval EFI_SUCCESS  PciInfo has been filled in. PciInfo->Name has been set
++                       to the empty string.
++
++  @return              Error codes from PciIo->Pci.Read() and
++                       PciIo->GetLocation(). The contents of PciInfo are
++                       indeterminate.
++**/
++STATIC
++EFI_STATUS
++InitPciInfo (
++  IN  EFI_PCI_IO_PROTOCOL *PciIo,
++  OUT CANDIDATE_PCI_INFO  *PciInfo
++  )
++{
++  EFI_STATUS Status;
++
++  Status = PciIo->Pci.Read (
++                        PciIo,
++                        EfiPciIoWidthUint16,
++                        PCI_VENDOR_ID_OFFSET,
++                        1,                    // Count
++                        &PciInfo->VendorId
++                        );
++  if (EFI_ERROR (Status)) {
++    return Status;
++  }
++
++  Status = PciIo->Pci.Read (
++                        PciIo,
++                        EfiPciIoWidthUint8,
++                        PCI_CLASSCODE_OFFSET,
++                        sizeof PciInfo->ClassCode,
++                        PciInfo->ClassCode
++                        );
++  if (EFI_ERROR (Status)) {
++    return Status;
++  }
++
++  Status = PciIo->GetLocation (
++                    PciIo,
++                    &PciInfo->Segment,
++                    &PciInfo->Bus,
++                    &PciInfo->Device,
++                    &PciInfo->Function
++                    );
++  if (EFI_ERROR (Status)) {
++    return Status;
++  }
++
++  PciInfo->Name[0] = '\0';
++  return EFI_SUCCESS;
++}
++
++
++/**
++  Format and get the debug name of a CANDIDATE_PCI_INFO structure.
++
++  param[in,out] PciInfo  If the PciInfo->Name member is an empty string, format
++                         the PCI bus address of PciInfo into PciInfo->Name.
++                         Otherwise, don't modify PciInfo.
++
++  @return                PciInfo->Name
++**/
++#if !defined(MDEPKG_NDEBUG)
++STATIC
++CONST CHAR8 *
++GetPciName (
++  IN OUT CANDIDATE_PCI_INFO *PciInfo
++  )
++{
++  if (PciInfo->Name[0] == '\0') {
++    AsciiSPrint (
++      PciInfo->Name,
++      sizeof PciInfo->Name,
++      "%04x:%02x:%02x.%x",
++      (UINT16)PciInfo->Segment,
++      (UINT8)PciInfo->Bus,
++      (UINT8)PciInfo->Device,
++      (UINT32)PciInfo->Function & 0xf
++      );
++  }
++  return PciInfo->Name;
++}
++#endif
++
++/**
++  Allocate memory in the 32-bit address space, with the requested UEFI memory
++  type and the requested alignment.
++
++  @param[in] MemoryType        Assign MemoryType to the allocated pages as
++                               memory type.
++
++  @param[in] NumberOfPages     The number of pages to allocate.
++
++  @param[in] AlignmentInPages  On output, Address will be a whole multiple of
++                               EFI_PAGES_TO_SIZE (AlignmentInPages).
++                               AlignmentInPages must be a power of two.
++
++  @param[out] Address          Base address of the allocated area.
++
++  @retval EFI_SUCCESS            Allocation successful.
++
++  @retval EFI_INVALID_PARAMETER  AlignmentInPages is not a power of two (a
++                                 special case of which is when AlignmentInPages
++                                 is zero).
++
++  @retval EFI_OUT_OF_RESOURCES   Integer overflow detected.
++
++  @return                        Error codes from gBS->AllocatePages().
++**/
++STATIC
++EFI_STATUS
++Allocate32BitAlignedPagesWithType (
++  IN  EFI_MEMORY_TYPE      MemoryType,
++  IN  UINTN                NumberOfPages,
++  IN  UINTN                AlignmentInPages,
++  OUT EFI_PHYSICAL_ADDRESS *Address
++  )
++{
++  EFI_STATUS           Status;
++  EFI_PHYSICAL_ADDRESS PageAlignedAddress;
++  EFI_PHYSICAL_ADDRESS FullyAlignedAddress;
++  UINTN                BottomPages;
++  UINTN                TopPages;
++
++  //
++  // AlignmentInPages must be a power of two.
++  //
++  if (AlignmentInPages == 0 ||
++      (AlignmentInPages & (AlignmentInPages - 1)) != 0) {
++    return EFI_INVALID_PARAMETER;
++  }
++  //
++  // (NumberOfPages + (AlignmentInPages - 1)) must not overflow UINTN.
++  //
++  if (AlignmentInPages - 1 > MAX_UINTN - NumberOfPages) {
++    return EFI_OUT_OF_RESOURCES;
++  }
++  //
++  // EFI_PAGES_TO_SIZE (AlignmentInPages) must not overflow UINTN.
++  //
++  if (AlignmentInPages > (MAX_UINTN >> EFI_PAGE_SHIFT)) {
++    return EFI_OUT_OF_RESOURCES;
++  }
++
++  //
++  // Allocate with sufficient padding for alignment.
++  //
++  PageAlignedAddress = BASE_4GB - 1;
++  Status = gBS->AllocatePages (
++                  AllocateMaxAddress,
++                  MemoryType,
++                  NumberOfPages + (AlignmentInPages - 1),
++                  &PageAlignedAddress
++                  );
++  if (EFI_ERROR (Status)) {
++    return Status;
++  }
++  FullyAlignedAddress = ALIGN_VALUE (
++                          PageAlignedAddress,
++                          (UINT64)EFI_PAGES_TO_SIZE (AlignmentInPages)
++                          );
++
++  //
++  // Release bottom and/or top padding.
++  //
++  BottomPages = EFI_SIZE_TO_PAGES (
++                  (UINTN)(FullyAlignedAddress - PageAlignedAddress)
++                  );
++  TopPages = (AlignmentInPages - 1) - BottomPages;
++  if (BottomPages > 0) {
++    Status = gBS->FreePages (PageAlignedAddress, BottomPages);
++    ASSERT_EFI_ERROR (Status);
++  }
++  if (TopPages > 0) {
++    Status = gBS->FreePages (
++                    FullyAlignedAddress + EFI_PAGES_TO_SIZE (NumberOfPages),
++                    TopPages
++                    );
++    ASSERT_EFI_ERROR (Status);
++  }
++
++  *Address = FullyAlignedAddress;
++  return EFI_SUCCESS;
++}
++
++
++/**
++  Set up the OpRegion for the device identified by PciIo.
++
++  @param[in] PciIo        The device to set up the OpRegion for.
++
++  @param[in,out] PciInfo  On input, PciInfo must have been initialized from
++                          PciIo with InitPciInfo(). SetupOpRegion() may call
++                          GetPciName() on PciInfo, possibly modifying it.
++
++  @retval EFI_SUCCESS            OpRegion setup successful.
++
++  @retval EFI_INVALID_PARAMETER  mOpRegionSize is zero.
++
++  @return                        Error codes propagated from underlying
++                                 functions.
++**/
++STATIC
++EFI_STATUS
++SetupOpRegion (
++  IN     EFI_PCI_IO_PROTOCOL *PciIo,
++  IN OUT CANDIDATE_PCI_INFO  *PciInfo
++  )
++{
++  UINTN                OpRegionPages;
++  UINTN                OpRegionResidual;
++  EFI_STATUS           Status;
++  EFI_PHYSICAL_ADDRESS Address;
++  UINT8                *BytePointer;
++
++  if (mOpRegionSize == 0) {
++    return EFI_INVALID_PARAMETER;
++  }
++  OpRegionPages = EFI_SIZE_TO_PAGES (mOpRegionSize);
++  OpRegionResidual = EFI_PAGES_TO_SIZE (OpRegionPages) - mOpRegionSize;
++
++  //
++  // While QEMU's "docs/igd-assign.txt" specifies reserved memory, Intel's IGD
++  // OpRegion spec refers to ACPI NVS.
++  //
++  Status = Allocate32BitAlignedPagesWithType (
++             EfiACPIMemoryNVS,
++             OpRegionPages,
++             1,                // AlignmentInPages
++             &Address
++             );
++  if (EFI_ERROR (Status)) {
++    DEBUG ((DEBUG_ERROR, "%a: %a: failed to allocate OpRegion: %r\n",
++      __FUNCTION__, GetPciName (PciInfo), Status));
++    return Status;
++  }
++
++  //
++  // Download OpRegion contents from fw_cfg, zero out trailing portion.
++  //
++  BytePointer = (UINT8 *)(UINTN)Address;
++  QemuFwCfgSelectItem (mOpRegionItem);
++  QemuFwCfgReadBytes (mOpRegionSize, BytePointer);
++  ZeroMem (BytePointer + mOpRegionSize, OpRegionResidual);
++
++  //
++  // Write address of OpRegion to PCI config space.
++  //
++  Status = PciIo->Pci.Write (
++                        PciIo,
++                        EfiPciIoWidthUint32,
++                        ASSIGNED_IGD_PCI_ASLS_OFFSET,
++                        1,                            // Count
++                        &Address
++                        );
++  if (EFI_ERROR (Status)) {
++    DEBUG ((DEBUG_ERROR, "%a: %a: failed to write OpRegion address: %r\n",
++      __FUNCTION__, GetPciName (PciInfo), Status));
++    goto FreeOpRegion;
++  }
++
++  DEBUG ((DEBUG_INFO, "%a: %a: OpRegion @ 0x%Lx size 0x%Lx version %d.%d.%d\n",
++    __FUNCTION__,
++    GetPciName (PciInfo), Address, (UINT64)mOpRegionSize,
++    ((IGD_OPREGION_HEADER*)BytePointer)->OVER >> 24,
++    ((IGD_OPREGION_HEADER*)BytePointer)->OVER >> 16 & 0xff,
++    ((IGD_OPREGION_HEADER*)BytePointer)->OVER >> 8 & 0xff));
++  return EFI_SUCCESS;
++
++FreeOpRegion:
++  gBS->FreePages (Address, OpRegionPages);
++  return Status;
++}
++
++
++/**
++  Set up stolen memory for the device identified by PciIo.
++
++  @param[in] PciIo        The device to set up stolen memory for.
++
++  @param[in,out] PciInfo  On input, PciInfo must have been initialized from
++                          PciIo with InitPciInfo(). SetupStolenMemory() may
++                          call GetPciName() on PciInfo, possibly modifying it.
++
++  @retval EFI_SUCCESS            Stolen memory setup successful.
++
++  @retval EFI_INVALID_PARAMETER  mBdsmSize is zero.
++
++  @return                        Error codes propagated from underlying
++                                 functions.
++**/
++STATIC
++EFI_STATUS
++SetupStolenMemory (
++  IN     EFI_PCI_IO_PROTOCOL *PciIo,
++  IN OUT CANDIDATE_PCI_INFO  *PciInfo
++  )
++{
++  UINTN                BdsmPages;
++  EFI_STATUS           Status;
++  EFI_PHYSICAL_ADDRESS Address;
++
++  if (mBdsmSize == 0) {
++    return EFI_INVALID_PARAMETER;
++  }
++  BdsmPages = EFI_SIZE_TO_PAGES (mBdsmSize);
++
++  Status = Allocate32BitAlignedPagesWithType (
++             EfiReservedMemoryType,
++             BdsmPages,
++             EFI_SIZE_TO_PAGES ((UINTN)ASSIGNED_IGD_BDSM_ALIGN),
++             &Address
++             );
++  if (EFI_ERROR (Status)) {
++    DEBUG ((DEBUG_ERROR, "%a: %a: failed to allocate stolen memory: %r\n",
++      __FUNCTION__, GetPciName (PciInfo), Status));
++    return Status;
++  }
++
++  //
++  // Zero out stolen memory.
++  //
++  ZeroMem ((VOID *)(UINTN)Address, EFI_PAGES_TO_SIZE (BdsmPages));
++
++  //
++  // Write address of stolen memory to PCI config space.
++  //
++  Status = PciIo->Pci.Write (
++                        PciIo,
++                        EfiPciIoWidthUint32,
++                        ASSIGNED_IGD_PCI_BDSM_OFFSET,
++                        1,                            // Count
++                        &Address
++                        );
++  if (EFI_ERROR (Status)) {
++    DEBUG ((DEBUG_ERROR, "%a: %a: failed to write stolen memory address: %r\n",
++      __FUNCTION__, GetPciName (PciInfo), Status));
++    goto FreeStolenMemory;
++  }
++
++  DEBUG ((DEBUG_INFO, "%a: %a: stolen memory @ 0x%Lx size 0x%Lx\n",
++    __FUNCTION__, GetPciName (PciInfo), Address, (UINT64)mBdsmSize));
++  return EFI_SUCCESS;
++
++FreeStolenMemory:
++  gBS->FreePages (Address, BdsmPages);
++  return Status;
++}
++
++
++/**
++  Process any PciIo protocol instances that may have been installed since the
++  last invocation.
++
++  @param[in] Event    Event whose notification function is being invoked.
++
++  @param[in] Context  The pointer to the notification function's context.
++**/
++STATIC
++VOID
++EFIAPI
++PciIoNotify (
++  IN EFI_EVENT Event,
++  IN VOID      *Context
++  )
++{
++  EFI_PCI_IO_PROTOCOL *PciIo;
++
++  while (!EFI_ERROR (gBS->LocateProtocol (
++                            &gEfiPciIoProtocolGuid,
++                            mPciIoTracker,
++                            (VOID **)&PciIo
++                            ))) {
++    EFI_STATUS         Status;
++    CANDIDATE_PCI_INFO PciInfo;
++
++    Status = InitPciInfo (PciIo, &PciInfo);
++    if (EFI_ERROR (Status)) {
++      DEBUG ((DEBUG_ERROR, "%a: InitPciInfo (PciIo@%p): %r\n", __FUNCTION__,
++        (VOID *)PciIo, Status));
++      continue;
++    }
++
++    //
++    // Check VendorId and ClassCode. These checks are necessary for both
++    // OpRegion and stolen memory setup.
++    //
++    if (PciInfo.VendorId != ASSIGNED_IGD_PCI_VENDOR_ID ||
++        PciInfo.ClassCode[2] != PCI_CLASS_DISPLAY ||
++        PciInfo.ClassCode[1] != PCI_CLASS_DISPLAY_VGA ||
++        PciInfo.ClassCode[0] != PCI_IF_VGA_VGA) {
++      continue;
++    }
++
++    if (mOpRegionSize > 0) {
++      SetupOpRegion (PciIo, &PciInfo);
++    }
++
++    //
++    // Check Bus:Device.Function (Segment is ignored). This is necessary before
++    // stolen memory setup.
++    //
++    if (PciInfo.Bus != ASSIGNED_IGD_PCI_BUS ||
++        PciInfo.Device != ASSIGNED_IGD_PCI_DEVICE ||
++        PciInfo.Function != ASSIGNED_IGD_PCI_FUNCTION) {
++      continue;
++    }
++
++    if (mBdsmSize > 0) {
++      SetupStolenMemory (PciIo, &PciInfo);
++    }
++  }
++}
++
++
++/**
++  Entry point for this driver.
++
++  @param[in] ImageHandle  Image handle of this driver.
++
++  @param[in] SystemTable  Pointer to SystemTable.
++
++  @retval EFI_SUCESS         Driver has loaded successfully.
++
++  @retval EFI_UNSUPPORTED    No IGD assigned.
++
++  @retval EFI_PROTOCOL_ERROR Invalid fw_cfg contents.
++
++  @return                    Error codes propagated from underlying functions.
++**/
++EFI_STATUS
++EFIAPI
++IgdAssignmentEntry (
++  IN EFI_HANDLE       ImageHandle,
++  IN EFI_SYSTEM_TABLE *SystemTable
++  )
++{
++  EFI_STATUS           OpRegionStatus;
++  EFI_STATUS           BdsmStatus;
++  FIRMWARE_CONFIG_ITEM BdsmItem;
++  UINTN                BdsmItemSize;
++  EFI_STATUS           Status;
++  EFI_EVENT            PciIoEvent;
++
++  OpRegionStatus = QemuFwCfgFindFile (
++                     ASSIGNED_IGD_FW_CFG_OPREGION,
++                     &mOpRegionItem,
++                     &mOpRegionSize
++                     );
++  BdsmStatus = QemuFwCfgFindFile (
++                 ASSIGNED_IGD_FW_CFG_BDSM_SIZE,
++                 &BdsmItem,
++                 &BdsmItemSize
++                 );
++  //
++  // If neither fw_cfg file is available, assume no IGD is assigned.
++  //
++  if (EFI_ERROR (OpRegionStatus) && EFI_ERROR (BdsmStatus)) {
++    return EFI_UNSUPPORTED;
++  }
++
++  //
++  // Require all fw_cfg files that are present to be well-formed.
++  //
++  if (!EFI_ERROR (OpRegionStatus) && mOpRegionSize == 0)  {
++    DEBUG ((DEBUG_ERROR, "%a: %a: zero size\n", __FUNCTION__,
++      ASSIGNED_IGD_FW_CFG_OPREGION));
++    return EFI_PROTOCOL_ERROR;
++  }
++
++  if (!EFI_ERROR (BdsmStatus)) {
++    UINT64 BdsmSize;
++
++    if (BdsmItemSize != sizeof BdsmSize) {
++      DEBUG ((DEBUG_ERROR, "%a: %a: invalid fw_cfg size: %Lu\n", __FUNCTION__,
++        ASSIGNED_IGD_FW_CFG_BDSM_SIZE, (UINT64)BdsmItemSize));
++      return EFI_PROTOCOL_ERROR;
++    }
++    QemuFwCfgSelectItem (BdsmItem);
++    QemuFwCfgReadBytes (BdsmItemSize, &BdsmSize);
++
++    if (BdsmSize == 0 || BdsmSize > MAX_UINTN) {
++      DEBUG ((DEBUG_ERROR, "%a: %a: invalid value: %Lu\n", __FUNCTION__,
++        ASSIGNED_IGD_FW_CFG_BDSM_SIZE, BdsmSize));
++      return EFI_PROTOCOL_ERROR;
++    }
++    mBdsmSize = (UINTN)BdsmSize;
++  }
++
++  //
++  // At least one valid fw_cfg file has been found.
++  //
++  ASSERT (mOpRegionSize > 0 || mBdsmSize > 0);
++
++  //
++  // Register PciIo protocol installation callback.
++  //
++  Status = gBS->CreateEvent (
++                  EVT_NOTIFY_SIGNAL,
++                  TPL_CALLBACK,
++                  PciIoNotify,
++                  NULL,              // Context
++                  &PciIoEvent
++                  );
++  if (EFI_ERROR (Status)) {
++    return Status;
++  }
++  Status = gBS->RegisterProtocolNotify (
++                  &gEfiPciIoProtocolGuid,
++                  PciIoEvent,
++                  &mPciIoTracker
++                  );
++  if (EFI_ERROR (Status)) {
++    goto ClosePciIoEvent;
++  }
++
++  //
++  // Kick the event for any existent PciIo protocol instances.
++  //
++  Status = gBS->SignalEvent (PciIoEvent);
++  if (EFI_ERROR (Status)) {
++    goto ClosePciIoEvent;
++  }
++
++  return EFI_SUCCESS;
++
++ClosePciIoEvent:
++  gBS->CloseEvent (PciIoEvent);
++
++  return Status;
++}
+diff --git a/OvmfPkg/IgdAssignmentDxe/IgdAssignment.inf b/OvmfPkg/IgdAssignmentDxe/IgdAssignment.inf
+new file mode 100644
+index 0000000000..241c57b6e2
+--- /dev/null
++++ b/OvmfPkg/IgdAssignmentDxe/IgdAssignment.inf
+@@ -0,0 +1,43 @@
++## @file
++# This driver enables Intel Graphics Device (IGD) assignment with vfio-pci
++# according to QEMU's "docs/igd-assign.txt" specification.
++#
++# Copyright (C) 2018, Red Hat, Inc.
++#
++# This program and the accompanying materials are licensed and made available
++# under the terms and conditions of the BSD License which accompanies this
++# distribution. The full text of the license may be found at
++# http://opensource.org/licenses/bsd-license.php
++#
++# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, WITHOUT
++# WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
++##
++
++[Defines]
++  INF_VERSION                    = 1.27
++  BASE_NAME                      = IgdAssignmentDxe
++  FILE_GUID                      = FDD95992-8F3B-4ADD-8DEC-989EA84E9DF1
++  MODULE_TYPE                    = DXE_DRIVER
++  VERSION_STRING                 = 1.0
++  ENTRY_POINT                    = IgdAssignmentEntry
++
++[Sources]
++  IgdAssignment.c
++
++[Packages]
++  MdePkg/MdePkg.dec
++  OvmfPkg/OvmfPkg.dec
++
++[LibraryClasses]
++  BaseMemoryLib
++  DebugLib
++  PrintLib
++  QemuFwCfgLib
++  UefiBootServicesTableLib
++  UefiDriverEntryPoint
++
++[Protocols]
++  gEfiPciIoProtocolGuid ## SOMETIMES_CONSUMES ## NOTIFY
++
++[Depex]
++  TRUE
+diff --git a/OvmfPkg/Include/IndustryStandard/AssignedIgd.h b/OvmfPkg/Include/IndustryStandard/AssignedIgd.h
+new file mode 100644
+index 0000000000..1543e20b08
+--- /dev/null
++++ b/OvmfPkg/Include/IndustryStandard/AssignedIgd.h
+@@ -0,0 +1,51 @@
++/** @file
++  Macros corresponding to QEMU's "Intel Graphics Device (IGD) assignment with
++  vfio-pci" specification, located at "docs/igd-assign.txt" in the QEMU source
++  tree.
++
++  Copyright (C) 2018, Red Hat, Inc.
++
++  This program and the accompanying materials are licensed and made available
++  under the terms and conditions of the BSD License which accompanies this
++  distribution. The full text of the license may be found at
++  http://opensource.org/licenses/bsd-license.php
++
++  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, WITHOUT
++  WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
++**/
++
++#ifndef _ASSIGNED_IGD_H_
++#define _ASSIGNED_IGD_H_
++
++#include <Base.h>
++
++//
++// names of fw_cfg files
++//
++#define ASSIGNED_IGD_FW_CFG_OPREGION  "etc/igd-opregion"
++#define ASSIGNED_IGD_FW_CFG_BDSM_SIZE "etc/igd-bdsm-size"
++
++//
++// Alignment constants. UEFI page allocation automatically satisfies the
++// requirements for the OpRegion, thus we only need to define an alignment
++// constant for IGD stolen memory.
++//
++#define ASSIGNED_IGD_BDSM_ALIGN SIZE_1MB
++
++//
++// PCI config space registers. The naming follows the PCI_*_OFFSET pattern seen
++// in MdePkg/Include/IndustryStandard/Pci*.h.
++//
++#define ASSIGNED_IGD_PCI_GSM_SIZE_OFFSET 0x51
++#define ASSIGNED_IGD_PCI_BDSM_OFFSET 0x5C
++#define ASSIGNED_IGD_PCI_ASLS_OFFSET 0xFC
++
++//
++// PCI location and vendor
++//
++#define ASSIGNED_IGD_PCI_BUS       0x00
++#define ASSIGNED_IGD_PCI_DEVICE    0x02
++#define ASSIGNED_IGD_PCI_FUNCTION  0x0
++#define ASSIGNED_IGD_PCI_VENDOR_ID 0x8086
++
++#endif // _ASSIGNED_IGD_H_
+diff --git a/OvmfPkg/Include/IndustryStandard/IgdOpRegion.h b/OvmfPkg/Include/IndustryStandard/IgdOpRegion.h
+new file mode 100644
+index 0000000000..4e9180c86b
+--- /dev/null
++++ b/OvmfPkg/Include/IndustryStandard/IgdOpRegion.h
+@@ -0,0 +1,181 @@
++/** @file
++  IGD OpRegion definition from Intel Integrated Graphics Device OpRegion
++  Specification.
++
++  https://01.org/sites/default/files/documentation/skl_opregion_rev0p5.pdf
++
++  @note Fixed bug in the spec Mailbox3 - RM31 size from 0x45(69) to 0x46(70)
++
++  Copyright (c) 2016 - 2019, Intel Corporation. All rights reserved.<BR>
++  This program and the accompanying materials
++  are licensed and made available under the terms and conditions of the BSD License
++  which accompanies this distribution.  The full text of the license may be found at
++  http://opensource.org/licenses/bsd-license.php
++
++  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
++  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
++
++**/
++#ifndef _IGD_OPREGION_H_
++#define _IGD_OPREGION_H_
++
++#define IGD_OPREGION_HEADER_SIGN "IntelGraphicsMem"
++#define IGD_OPREGION_HEADER_MBOX1 BIT0
++#define IGD_OPREGION_HEADER_MBOX2 BIT1
++#define IGD_OPREGION_HEADER_MBOX3 BIT2
++#define IGD_OPREGION_HEADER_MBOX4 BIT3
++#define IGD_OPREGION_HEADER_MBOX5 BIT4
++
++#define IGD_OPREGION_VBT_SIZE_6K (6 * SIZE_1KB)
++
++/**
++  OpRegion structures:
++  Sub-structures define the different parts of the OpRegion followed by the
++  main structure representing the entire OpRegion.
++
++  @note These structures are packed to 1 byte offsets because the exact
++  data location is required by the supporting design specification due to
++  the fact that the data is used by ASL and Graphics driver code compiled
++  separately.
++**/
++#pragma pack(1)
++///
++/// OpRegion Mailbox 0 Header structure. The OpRegion Header is used to
++/// identify a block of memory as the graphics driver OpRegion.
++/// Offset 0x0, Size 0x100
++///
++typedef struct {
++  CHAR8  SIGN[0x10];    ///< Offset 0x00 OpRegion Signature
++  UINT32 SIZE;          ///< Offset 0x10 OpRegion Size
++  UINT32 OVER;          ///< Offset 0x14 OpRegion Structure Version
++  UINT8  SVER[0x20];    ///< Offset 0x18 System BIOS Build Version
++  UINT8  VVER[0x10];    ///< Offset 0x38 Video BIOS Build Version
++  UINT8  GVER[0x10];    ///< Offset 0x48 Graphic Driver Build Version
++  UINT32 MBOX;          ///< Offset 0x58 Supported Mailboxes
++  UINT32 DMOD;          ///< Offset 0x5C Driver Model
++  UINT32 PCON;          ///< Offset 0x60 Platform Configuration
++  CHAR16 DVER[0x10];    ///< Offset 0x64 GOP Version
++  UINT8  RM01[0x7C];    ///< Offset 0x84 Reserved Must be zero
++} IGD_OPREGION_HEADER;
++
++///
++/// OpRegion Mailbox 1 - Public ACPI Methods
++/// Offset 0x100, Size 0x100
++///
++typedef struct {
++  UINT32 DRDY;          ///< Offset 0x100 Driver Readiness
++  UINT32 CSTS;          ///< Offset 0x104 Status
++  UINT32 CEVT;          ///< Offset 0x108 Current Event
++  UINT8  RM11[0x14];    ///< Offset 0x10C Reserved Must be Zero
++  UINT32 DIDL[8];       ///< Offset 0x120 Supported Display Devices ID List
++  UINT32 CPDL[8];       ///< Offset 0x140 Currently Attached Display Devices List
++  UINT32 CADL[8];       ///< Offset 0x160 Currently Active Display Devices List
++  UINT32 NADL[8];       ///< Offset 0x180 Next Active Devices List
++  UINT32 ASLP;          ///< Offset 0x1A0 ASL Sleep Time Out
++  UINT32 TIDX;          ///< Offset 0x1A4 Toggle Table Index
++  UINT32 CHPD;          ///< Offset 0x1A8 Current Hotplug Enable Indicator
++  UINT32 CLID;          ///< Offset 0x1AC Current Lid State Indicator
++  UINT32 CDCK;          ///< Offset 0x1B0 Current Docking State Indicator
++  UINT32 SXSW;          ///< Offset 0x1B4 Display Switch Notification on Sx State Resume
++  UINT32 EVTS;          ///< Offset 0x1B8 Events supported by ASL
++  UINT32 CNOT;          ///< Offset 0x1BC Current OS Notification
++  UINT32 NRDY;          ///< Offset 0x1C0 Driver Status
++  UINT8  DID2[0x1C];    ///< Offset 0x1C4 Extended Supported Devices ID List (DOD)
++  UINT8  CPD2[0x1C];    ///< Offset 0x1E0 Extended Attached Display Devices List
++  UINT8  RM12[4];       ///< Offset 0x1FC - 0x1FF Reserved Must be zero
++} IGD_OPREGION_MBOX1;
++
++///
++/// OpRegion Mailbox 2 - Software SCI Interface
++/// Offset 0x200, Size 0x100
++///
++typedef struct {
++  UINT32 SCIC;          ///< Offset 0x200 Software SCI Command / Status / Data
++  UINT32 PARM;          ///< Offset 0x204 Software SCI Parameters
++  UINT32 DSLP;          ///< Offset 0x208 Driver Sleep Time Out
++  UINT8  RM21[0xF4];    ///< Offset 0x20C - 0x2FF Reserved Must be zero
++} IGD_OPREGION_MBOX2;
++
++///
++/// OpRegion Mailbox 3 - BIOS/Driver Notification - ASLE Support
++/// Offset 0x300, Size 0x100
++///
++typedef struct {
++  UINT32 ARDY;          ///< Offset 0x300 Driver Readiness
++  UINT32 ASLC;          ///< Offset 0x304 ASLE Interrupt Command / Status
++  UINT32 TCHE;          ///< Offset 0x308 Technology Enabled Indicator
++  UINT32 ALSI;          ///< Offset 0x30C Current ALS Luminance Reading
++  UINT32 BCLP;          ///< Offset 0x310 Requested Backlight Brightness
++  UINT32 PFIT;          ///< Offset 0x314 Panel Fitting State or Request
++  UINT32 CBLV;          ///< Offset 0x318 Current Brightness Level
++  UINT16 BCLM[0x14];    ///< Offset 0x31C Backlight Brightness Levels Duty Cycle Mapping Table
++  UINT32 CPFM;          ///< Offset 0x344 Current Panel Fitting Mode
++  UINT32 EPFM;          ///< Offset 0x348 Enabled Panel Fitting Modes
++  UINT8  PLUT[0x4A];    ///< Offset 0x34C Panel Look Up Table & Identifier
++  UINT32 PFMB;          ///< Offset 0x396 PWM Frequency and Minimum Brightness
++  UINT32 CCDV;          ///< Offset 0x39A Color Correction Default Values
++  UINT32 PCFT;          ///< Offset 0x39E Power Conservation Features
++  UINT32 SROT;          ///< Offset 0x3A2 Supported Rotation Angles
++  UINT32 IUER;          ///< Offset 0x3A6 Intel Ultrabook(TM) Event Register
++  UINT64 FDSS;          ///< Offset 0x3AA DSS Buffer address allocated for IFFS feature
++  UINT32 FDSP;          ///< Offset 0x3B2 Size of DSS buffer
++  UINT32 STAT;          ///< Offset 0x3B6 State Indicator
++  UINT64 RVDA;          ///< Offset 0x3BA Absolute/Relative Address of Raw VBT Data from OpRegion Base
++  UINT32 RVDS;          ///< Offset 0x3C2 Raw VBT Data Size
++  UINT8  RSVD3[0x3A];   ///< Offset 0x3C6 - 0x3FF  Reserved Must be zero. Bug in spec 0x45(69)
++} IGD_OPREGION_MBOX3;
++
++///
++/// OpRegion Mailbox 4 - VBT Video BIOS Table
++/// Offset 0x400, Size 0x1800
++///
++typedef struct {
++  UINT8  RVBT[IGD_OPREGION_VBT_SIZE_6K];  ///< Offset 0x400 - 0x1BFF Raw VBT Data
++} IGD_OPREGION_MBOX4;
++
++///
++/// OpRegion Mailbox 5 - BIOS/Driver Notification - Data storage BIOS to Driver data sync
++/// Offset 0x1C00, Size 0x400
++///
++typedef struct {
++  UINT32 PHED;          ///< Offset 0x1C00 Panel Header
++  UINT8  BDDC[0x100];   ///< Offset 0x1C04 Panel EDID (DDC data)
++  UINT8  RM51[0x2FC];   ///< Offset 0x1D04 - 0x1FFF Reserved Must be zero
++} IGD_OPREGION_MBOX5;
++
++///
++/// IGD OpRegion Structure
++///
++typedef struct {
++  IGD_OPREGION_HEADER Header; ///< OpRegion header (Offset 0x0, Size 0x100)
++  IGD_OPREGION_MBOX1  MBox1;  ///< Mailbox 1: Public ACPI Methods (Offset 0x100, Size 0x100)
++  IGD_OPREGION_MBOX2  MBox2;  ///< Mailbox 2: Software SCI Interface (Offset 0x200, Size 0x100)
++  IGD_OPREGION_MBOX3  MBox3;  ///< Mailbox 3: BIOS to Driver Notification (Offset 0x300, Size 0x100)
++  IGD_OPREGION_MBOX4  MBox4;  ///< Mailbox 4: Video BIOS Table (VBT) (Offset 0x400, Size 0x1800)
++  IGD_OPREGION_MBOX5  MBox5;  ///< Mailbox 5: BIOS to Driver Notification Extension (Offset 0x1C00, Size 0x400)
++} IGD_OPREGION_STRUCTURE;
++
++///
++/// VBT Header Structure
++///
++typedef struct {
++  UINT8  Product_String[20];
++  UINT16 Version;
++  UINT16 Header_Size;
++  UINT16 Table_Size;
++  UINT8  Checksum;
++  UINT8  Reserved1;
++  UINT32 Bios_Data_Offset;
++  UINT32 Aim_Data_Offset[4];
++} VBT_HEADER;
++
++typedef struct {
++  UINT8  BDB_Signature[16];
++  UINT16 BDB_Version;
++  UINT16 BDB_Header_Size;
++  UINT16 BDB_Size;
++} VBT_BIOS_DATA_HEADER;
++
++#pragma pack()
++
++#endif
+diff --git a/OvmfPkg/Include/Protocol/PlatformGopPolicy.h b/OvmfPkg/Include/Protocol/PlatformGopPolicy.h
+new file mode 100644
+index 0000000000..e29c8690fd
+--- /dev/null
++++ b/OvmfPkg/Include/Protocol/PlatformGopPolicy.h
+@@ -0,0 +1,68 @@
++/*++
++
++Copyright (c)  1999  - 2019, Intel Corporation. All rights reserved
++                                                                                   
++  This program and the accompanying materials are licensed and made available under
++  the terms and conditions of the BSD License that accompanies this distribution.  
++  The full text of the license may be found at                                     
++  http://opensource.org/licenses/bsd-license.php.                                  
++                                                                                   
++  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,            
++  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.    
++                                                                                   
++
++--*/
++
++/** @file
++**/
++
++#ifndef _PLATFORM_GOP_POLICY_PROTOCOL_H_
++#define _PLATFORM_GOP_POLICY_PROTOCOL_H_
++
++#define EFI_PLATFORM_GOP_POLICY_PROTOCOL_GUID \
++  { 0xec2e931b, 0x3281, 0x48a5, 0x81, 0x7, 0xdf, 0x8a, 0x8b, 0xed, 0x3c, 0x5d }
++
++#define PLATFORM_GOP_POLICY_PROTOCOL_REVISION_01 0x01
++#define PLATFORM_GOP_POLICY_PROTOCOL_REVISION_02 x0222
++
++#pragma pack(1)
++
++typedef enum {
++  LidClosed,
++  LidOpen,
++  LidStatusMax
++} LID_STATUS;
++
++typedef enum {
++  Docked,
++  UnDocked,
++  DockStatusMax
++} DOCK_STATUS;
++
++typedef
++EFI_STATUS
++(EFIAPI *GET_PLATFORM_LID_STATUS) (
++   OUT LID_STATUS *CurrentLidStatus
++);
++
++typedef
++EFI_STATUS
++(EFIAPI *GET_VBT_DATA) (
++   OUT EFI_PHYSICAL_ADDRESS *VbtAddress,
++   OUT UINT32 *VbtSize
++);
++
++#pragma pack()
++
++typedef struct _PLATFORM_GOP_POLICY_PROTOCOL {
++  UINT32                             Revision;
++  GET_PLATFORM_LID_STATUS            GetPlatformLidStatus;
++  GET_VBT_DATA                       GetVbtData;
++} PLATFORM_GOP_POLICY_PROTOCOL;
++
++//
++// Extern the GUID for protocol users.
++//
++extern EFI_GUID  gPlatformGOPPolicyGuid;
++
++#endif
+diff --git a/OvmfPkg/IntelGop/IntelGopDriver.inf b/OvmfPkg/IntelGop/IntelGopDriver.inf
+new file mode 100644
+index 0000000000..e0d23b120a
+--- /dev/null
++++ b/OvmfPkg/IntelGop/IntelGopDriver.inf
+@@ -0,0 +1,17 @@
++## @file
++#  IntelGopDriver Binary
++#
++#  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
++#  SPDX-License-Identifier: BSD-2-Clause-Patent
++#
++##
++
++[Defines]
++  INF_VERSION                    = 0x00010005
++  BASE_NAME                      = IntelGopDriver
++  FILE_GUID                      = 1647B4F3-3E8A-4FDD-81C8-328ED647AB1A
++  MODULE_TYPE                    = UEFI_DRIVER
++  VERSION_STRING                 = 1.0
++
++[Binaries]
++  PE32|IntelGopDriver.efi|*
+diff --git a/OvmfPkg/OvmfPkg.dec b/OvmfPkg/OvmfPkg.dec
+index 51be9a5959..c6b6bfea5d 100644
+--- a/OvmfPkg/OvmfPkg.dec
++++ b/OvmfPkg/OvmfPkg.dec
+@@ -186,7 +186,8 @@
+   gXenBusProtocolGuid                   = {0x3d3ca290, 0xb9a5, 0x11e3, {0xb7, 0x5d, 0xb8, 0xac, 0x6f, 0x7d, 0x65, 0xe6}}
+   gXenIoProtocolGuid                    = {0x6efac84f, 0x0ab0, 0x4747, {0x81, 0xbe, 0x85, 0x55, 0x62, 0x59, 0x04, 0x49}}
+   gIoMmuAbsentProtocolGuid              = {0xf8775d50, 0x8abd, 0x4adf, {0x92, 0xac, 0x85, 0x3e, 0x51, 0xf6, 0xc8, 0xdc}}
+-  gOvmfLoadedX86LinuxKernelProtocolGuid = {0xa3edc05d, 0xb618, 0x4ff6, {0x95, 0x52, 0x76, 0xd7, 0x88, 0x63, 0x43, 0xc8}}
++  gOvmfLoadedX86LinuxKernelProtocolGuid = {0xa3edc05d, 0xb618, 0x4ff6, {0x95, 0x52, 0x76, 0xd7, 0x88, 0x63, 0x43, 0xc8}}
++  gPlatformGOPPolicyGuid                = {0xec2e931b, 0x3281, 0x48a5, {0x81, 0x07, 0xdf, 0x8a, 0x8b, 0xed, 0x3c, 0x5d}}
+   gOvmfSevMemoryAcceptanceProtocolGuid  = {0xc5a010fe, 0x38a7, 0x4531, {0x8a, 0x4a, 0x05, 0x00, 0xd2, 0xfd, 0x16, 0x49}}
+   gQemuAcpiTableNotifyProtocolGuid      = {0x928939b2, 0x4235, 0x462f, {0x95, 0x80, 0xf6, 0xa2, 0xb2, 0xc2, 0x1a, 0x4f}}
+   gEfiMpInitLibMpDepProtocolGuid        = {0xbb00a5ca, 0x8ce,  0x462f, {0xa5, 0x37, 0x43, 0xc7, 0x4a, 0x82, 0x5c, 0xa4}}
+diff --git a/OvmfPkg/OvmfPkgIa32.fdf b/OvmfPkg/OvmfPkgIa32.fdf
+index 6eb26f7d46..98db08b7bb 100644
+--- a/OvmfPkg/OvmfPkgIa32.fdf
++++ b/OvmfPkg/OvmfPkgIa32.fdf
+@@ -458,6 +458,15 @@ FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
+     UI        STRING="$(MODULE_NAME)" Optional
+     VERSION   STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+   }
++[Rule.Common.USER_DEFINED]
++  FILE FREEFORM = $(NAMED_GUID) {
++    RAW BIN                |.bin
++  }
++
++[Rule.Common.USER_DEFINED.BINARY]
++  FILE FREEFORM = $(NAMED_GUID) {
++    RAW BIN                |.bin
++  }
+ 
+ [Rule.Common.UEFI_APPLICATION]
+   FILE APPLICATION = $(NAMED_GUID) {
+diff --git a/OvmfPkg/OvmfPkgIa32X64.dsc b/OvmfPkg/OvmfPkgIa32X64.dsc
+index d27a4c7278..7d5ba3b960 100644
+--- a/OvmfPkg/OvmfPkgIa32X64.dsc
++++ b/OvmfPkg/OvmfPkgIa32X64.dsc
+@@ -800,7 +800,10 @@
+   OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
+   OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
+   OvmfPkg/VirtioRngDxe/VirtioRng.inf
+-  OvmfPkg/VirtioSerialDxe/VirtioSerial.inf
++  OvmfPkg/VirtioSerialDxe/VirtioSerial.inf
++  OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.inf
++  OvmfPkg/IgdAssignmentDxe/IgdAssignment.inf
++
+ !if $(PVSCSI_ENABLE) == TRUE
+   OvmfPkg/PvScsiDxe/PvScsiDxe.inf
+ !endif
+diff --git a/OvmfPkg/OvmfPkgIa32X64.fdf b/OvmfPkg/OvmfPkgIa32X64.fdf
+index 080784f722..9cc793c6c2 100644
+--- a/OvmfPkg/OvmfPkgIa32X64.fdf
++++ b/OvmfPkg/OvmfPkgIa32X64.fdf
+@@ -234,7 +234,10 @@ INF  OvmfPkg/Virtio10Dxe/Virtio10.inf
+ INF  OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
+ INF  OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
+ INF  OvmfPkg/VirtioRngDxe/VirtioRng.inf
+-INF  OvmfPkg/VirtioSerialDxe/VirtioSerial.inf
++INF  OvmfPkg/VirtioSerialDxe/VirtioSerial.inf
++INF  OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.inf
++INF  OvmfPkg/IgdAssignmentDxe/IgdAssignment.inf
++
+ !if $(PVSCSI_ENABLE) == TRUE
+ INF  OvmfPkg/PvScsiDxe/PvScsiDxe.inf
+ !endif
+@@ -461,6 +464,16 @@ FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
+     UI        STRING="$(MODULE_NAME)" Optional
+     VERSION   STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+   }
++
++[Rule.Common.USER_DEFINED]
++  FILE FREEFORM = $(NAMED_GUID) {
++    RAW BIN                |.bin
++  }
++
++[Rule.Common.USER_DEFINED.BINARY]
++  FILE FREEFORM = $(NAMED_GUID) {
++    RAW BIN                |.bin
++  }
+ 
+ [Rule.Common.UEFI_APPLICATION]
+   FILE APPLICATION = $(NAMED_GUID) {
+diff --git a/OvmfPkg/OvmfPkgX64.dsc b/OvmfPkg/OvmfPkgX64.dsc
+index 8f5cd23b2e..0b58473409 100644
+--- a/OvmfPkg/OvmfPkgX64.dsc
++++ b/OvmfPkg/OvmfPkgX64.dsc
+@@ -868,7 +868,9 @@
+   OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
+   OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
+   OvmfPkg/VirtioRngDxe/VirtioRng.inf
+-  OvmfPkg/VirtioSerialDxe/VirtioSerial.inf
++  OvmfPkg/VirtioSerialDxe/VirtioSerial.inf
++  OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.inf
++  OvmfPkg/IgdAssignmentDxe/IgdAssignment.inf
+ !if $(PVSCSI_ENABLE) == TRUE
+   OvmfPkg/PvScsiDxe/PvScsiDxe.inf
+ !endif
+diff --git a/OvmfPkg/OvmfPkgX64.fdf b/OvmfPkg/OvmfPkgX64.fdf
+index b6e8f43566..42f7657b51 100644
+--- a/OvmfPkg/OvmfPkgX64.fdf
++++ b/OvmfPkg/OvmfPkgX64.fdf
+@@ -265,7 +265,9 @@ INF  OvmfPkg/Virtio10Dxe/Virtio10.inf
+ INF  OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
+ INF  OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
+ INF  OvmfPkg/VirtioRngDxe/VirtioRng.inf
+-INF  OvmfPkg/VirtioSerialDxe/VirtioSerial.inf
++INF  OvmfPkg/VirtioSerialDxe/VirtioSerial.inf
++INF  OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.inf
++INF  OvmfPkg/IgdAssignmentDxe/IgdAssignment.inf
+ !if $(PVSCSI_ENABLE) == TRUE
+ INF  OvmfPkg/PvScsiDxe/PvScsiDxe.inf
+ !endif
+@@ -501,6 +503,16 @@ FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
+     UI        STRING="$(MODULE_NAME)" Optional
+     VERSION   STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+   }
++
++[Rule.Common.USER_DEFINED]
++  FILE FREEFORM = $(NAMED_GUID) {
++    RAW BIN                |.bin
++  }
++
++[Rule.Common.USER_DEFINED.BINARY]
++  FILE FREEFORM = $(NAMED_GUID) {
++    RAW BIN                |.bin
++  }
+ 
+ [Rule.Common.UEFI_APPLICATION]
+   FILE APPLICATION = $(NAMED_GUID) {
+diff --git a/OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.c b/OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.c
+new file mode 100644
+index 0000000000..90db053584
+--- /dev/null
++++ b/OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.c
+@@ -0,0 +1,206 @@
++/*++
++
++Copyright (c)  1999  - 2019, Intel Corporation. All rights reserved
++                                                                                   
++  This program and the accompanying materials are licensed and made available under
++  the terms and conditions of the BSD License that accompanies this distribution.  
++  The full text of the license may be found at                                     
++  http://opensource.org/licenses/bsd-license.php.                                  
++                                                                                   
++  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,            
++  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.    
++                                                                                   
++
++--*/
++
++/** @file
++**/
++
++#include <Library/BaseMemoryLib.h>
++#include <Library/DebugLib.h>
++#include <Protocol/FirmwareVolume2.h>
++#include <Protocol/PlatformGopPolicy.h>
++
++#include <Library/UefiBootServicesTableLib.h>
++#include <Library/UefiRuntimeServicesTableLib.h>
++#include <Library/PciLib.h>
++
++#include <IndustryStandard/AssignedIgd.h>
++#include <IndustryStandard/IgdOpRegion.h>
++
++PLATFORM_GOP_POLICY_PROTOCOL  mPlatformGOPPolicy;
++EFI_PHYSICAL_ADDRESS mVbt;
++
++//
++// Function implementations
++//
++
++/**
++  The function will execute with as the platform policy, and gives
++  the Platform Lid Status. IBV/OEM can customize this code for their specific
++  policy action.
++
++  @param CurrentLidStatus  Gives the current LID Status
++
++  @retval EFI_SUCCESS.
++
++**/
++EFI_STATUS
++EFIAPI
++GetPlatformLidStatus (
++   OUT LID_STATUS *CurrentLidStatus
++)
++{
++  return EFI_UNSUPPORTED;
++}
++
++/**
++  The function will execute and gives the Video Bios Table Size and Address.
++
++  @param VbtAddress  Gives the Physical Address of Video BIOS Table
++
++  @param VbtSize     Gives the Size of Video BIOS Table
++
++  @retval EFI_STATUS.
++
++**/
++
++EFI_STATUS
++EFIAPI
++GetVbtData (
++   OUT EFI_PHYSICAL_ADDRESS *VbtAddress,
++   OUT UINT32 *VbtSize
++)
++{
++  IGD_OPREGION_STRUCTURE *OpRegion;
++  EFI_STATUS Status = EFI_INVALID_PARAMETER;
++  UINT16 VerMajor, VerMinor = 0;
++  UINT32 VbtSizeMax = 0;
++
++  OpRegion = (IGD_OPREGION_STRUCTURE*)(UINTN)PciRead32 (
++    PCI_LIB_ADDRESS (
++      ASSIGNED_IGD_PCI_BUS,
++      ASSIGNED_IGD_PCI_DEVICE,
++      ASSIGNED_IGD_PCI_FUNCTION,
++      ASSIGNED_IGD_PCI_ASLS_OFFSET));
++
++  /* Validate IGD OpRegion signature and version */
++  if (OpRegion) {
++    if (CompareMem (OpRegion->Header.SIGN, IGD_OPREGION_HEADER_SIGN, sizeof(OpRegion->Header.SIGN)) != 0) {
++      DEBUG ((EFI_D_ERROR, "%a: Invalid OpRegion signature, expect %s\n",
++        __FUNCTION__, IGD_OPREGION_HEADER_SIGN));
++      return EFI_INVALID_PARAMETER;
++    } else {
++      VerMajor = OpRegion->Header.OVER >> 24;
++      VerMinor = OpRegion->Header.OVER >> 16 & 0xff;
++      if (VerMajor < 2 || OpRegion->MBox3.RVDA == 0) {
++        VbtSizeMax = IGD_OPREGION_VBT_SIZE_6K;
++        if (((VBT_HEADER*)&OpRegion->MBox4)->Table_Size > IGD_OPREGION_VBT_SIZE_6K) {
++          DEBUG ((EFI_D_ERROR, "%a: VBT Header reports larger size (0x%x) than OpRegion VBT Mailbox (0x%x)\n",
++            __FUNCTION__,
++            ((VBT_HEADER*)&OpRegion->MBox4)->Table_Size, IGD_OPREGION_VBT_SIZE_6K));
++          VbtSizeMax = 0;
++          return EFI_INVALID_PARAMETER;
++        }
++      } else {
++        DEBUG ((EFI_D_ERROR, "%a: Unsupported OpRegion version %d.%d\n",
++          __FUNCTION__, VerMajor, VerMinor));
++        return EFI_UNSUPPORTED;
++      }
++    }
++  }
++
++  if (mVbt) {
++    Status = gBS->FreePages (
++                    mVbt,
++                    EFI_SIZE_TO_PAGES (VbtSizeMax)
++                    );
++  }
++
++  if (VbtSizeMax == IGD_OPREGION_VBT_SIZE_6K) {
++    mVbt = SIZE_4GB - 1;
++  }
++
++  /* Only operates VBT on support OpRegion */
++  if (VbtSizeMax) {
++    Status = gBS->AllocatePages (
++                    AllocateMaxAddress,
++                    EfiReservedMemoryType,
++                    EFI_SIZE_TO_PAGES (VbtSizeMax),
++                    &mVbt
++                    );
++    if (EFI_ERROR (Status)) {
++      DEBUG ((EFI_D_ERROR, "%a: AllocatePages failed for VBT size 0x%x status %d\n",
++        __FUNCTION__, VbtSizeMax, Status));
++      return EFI_OUT_OF_RESOURCES;
++    } else {
++      UINT8 CheckSum = 0;
++
++      /* Zero-out first*/
++      ZeroMem ((VOID*)mVbt, VbtSizeMax);
++      /* Only copy with size as specified in VBT table */
++      CopyMem((VOID*)mVbt, (VOID*)OpRegion->MBox4.RVBT, ((VBT_HEADER*)&OpRegion->MBox4)->Table_Size);
++
++      /* Fix the checksum */
++      for (UINT32 i = 0; i < ((VBT_HEADER*)mVbt)->Table_Size; i++) {
++        CheckSum = (CheckSum + ((UINT8*)mVbt)[i]) & 0xFF;
++      }
++      ((VBT_HEADER*)mVbt)->Checksum += (0x100 - CheckSum);
++
++      *VbtAddress = mVbt;
++      *VbtSize = ((VBT_HEADER*)mVbt)->Table_Size;
++      DEBUG ((DEBUG_INFO, "%a: VBT Version %d size 0x%x\n", __FUNCTION__,
++        ((VBT_BIOS_DATA_HEADER*)(mVbt + ((VBT_HEADER*)mVbt)->Bios_Data_Offset))->BDB_Version,
++        ((VBT_HEADER*)mVbt)->Table_Size));
++      return EFI_SUCCESS;
++    }
++  }
++
++  return EFI_UNSUPPORTED;
++}
++
++/**
++  Entry point for the Platform GOP Policy Driver.
++
++  @param ImageHandle       Image handle of this driver.
++  @param SystemTable       Global system service table.
++
++  @retval EFI_SUCCESS           Initialization complete.
++  @retval EFI_OUT_OF_RESOURCES  Do not have enough resources to initialize the driver.
++
++**/
++
++EFI_STATUS
++EFIAPI
++PlatformGOPPolicyEntryPoint (
++  IN EFI_HANDLE       ImageHandle,
++  IN EFI_SYSTEM_TABLE *SystemTable
++  )
++
++{
++  EFI_STATUS  Status = EFI_SUCCESS;
++
++  gBS = SystemTable->BootServices;
++
++  gBS->SetMem (
++         &mPlatformGOPPolicy,
++         sizeof (PLATFORM_GOP_POLICY_PROTOCOL),
++         0
++         );
++
++  mPlatformGOPPolicy.Revision                = PLATFORM_GOP_POLICY_PROTOCOL_REVISION_01;
++  mPlatformGOPPolicy.GetPlatformLidStatus    = GetPlatformLidStatus;
++  mPlatformGOPPolicy.GetVbtData              = GetVbtData;
++
++  //
++  // Install protocol to allow access to this Policy.
++  //  
++  Status = gBS->InstallMultipleProtocolInterfaces (
++                  &ImageHandle,
++                  &gPlatformGOPPolicyGuid,
++                  &mPlatformGOPPolicy,
++                  NULL
++                  );
++
++  return Status;
++}
+diff --git a/OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.inf b/OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.inf
+new file mode 100644
+index 0000000000..2e986643d9
+--- /dev/null
++++ b/OvmfPkg/PlatformGopPolicy/PlatformGopPolicy.inf
+@@ -0,0 +1,50 @@
++#
++#
++# Copyright (c)  1999  - 2019, Intel Corporation. All rights reserved
++#                                                                                  
++# This program and the accompanying materials are licensed and made available under
++# the terms and conditions of the BSD License that accompanies this distribution.  
++# The full text of the license may be found at                                     
++# http://opensource.org/licenses/bsd-license.php.                                  
++#                                                                                  
++# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,            
++# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.    
++#                                                                                  
++#
++#
++##
++
++
++[Defines]
++  INF_VERSION                    = 0x00010005
++  BASE_NAME                      = PlatformGOPPolicy
++  FILE_GUID                      = 9737D7CA-D869-45e5-A5EF-75D9438688DE
++  MODULE_TYPE                    = DXE_DRIVER
++  VERSION_STRING                 = 1.0
++  ENTRY_POINT                    = PlatformGOPPolicyEntryPoint
++
++#
++# The following information is for reference only and not required by the build tools.
++#
++#  VALID_ARCHITECTURES           = X64
++#
++
++[Sources.common]
++  PlatformGopPolicy.c
++
++[Packages]
++  MdePkg/MdePkg.dec
++  OvmfPkg/OvmfPkg.dec
++
++[LibraryClasses]
++  BaseLib
++  DebugLib
++  UefiDriverEntryPoint
++  UefiRuntimeServicesTableLib
++  PciLib
++
++[Protocols]
++  gPlatformGOPPolicyGuid
++
++[Depex]
++  TRUE
+diff --git a/OvmfPkg/Vbt/Vbt.inf b/OvmfPkg/Vbt/Vbt.inf
+new file mode 100644
+index 0000000000..9aae000496
+--- /dev/null
++++ b/OvmfPkg/Vbt/Vbt.inf
+@@ -0,0 +1,17 @@
++## @file
++#  Vbt Binary
++#
++#  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
++#  SPDX-License-Identifier: BSD-2-Clause-Patent
++#
++##
++
++[Defines]
++  INF_VERSION                    = 0x00010005
++  BASE_NAME                      = Vbt
++  FILE_GUID                      = 1647B4F3-3E8A-4FEF-81C8-328ED647AB1A
++  MODULE_TYPE                    = USER_DEFINED
++  VERSION_STRING                 = 1.0
++
++[Binaries]
++  BIN|Vbt.bin|*
+diff --git a/ShellPkg/Application/Shell/Shell.c b/ShellPkg/Application/Shell/Shell.c
+index 01b4e37871..189d0c5230 100644
+--- a/ShellPkg/Application/Shell/Shell.c
++++ b/ShellPkg/Application/Shell/Shell.c
+@@ -358,6 +358,20 @@ UefiMain (
+   EFI_HANDLE                      ConInHandle;
+   EFI_SIMPLE_TEXT_INPUT_PROTOCOL  *OldConIn;
+   SPLIT_LIST                      *Split;
++  UINT8                           SetupMode;
++
++  //
++  // Check for Secure Boot mode
++  //
++  if (IsSecureBootEnabled()) {
++    Status = GetSetupMode (&SetupMode);
++    if (EFI_ERROR (Status)) {
++        return (Status);
++    }
++    if (SetupMode != 1) {
++      return (EFI_SECURITY_VIOLATION);
++    }
++  }
+ 
+   if (PcdGet8 (PcdShellSupportLevel) > 3) {
+     return (EFI_UNSUPPORTED);
+diff --git a/ShellPkg/Application/Shell/Shell.h b/ShellPkg/Application/Shell/Shell.h
+index 89b4ac6b02..595ec79369 100644
+--- a/ShellPkg/Application/Shell/Shell.h
++++ b/ShellPkg/Application/Shell/Shell.h
+@@ -11,9 +11,11 @@
+ #define _SHELL_INTERNAL_HEADER_
+ 
+ #include <Uefi.h>
++#include <UefiSecureBoot.h>
+ 
+ #include <Guid/ShellVariableGuid.h>
+ #include <Guid/ShellAliasGuid.h>
++#include <Guid/ImageAuthentication.h>
+ 
+ #include <Protocol/LoadedImage.h>
+ #include <Protocol/SimpleTextOut.h>
+@@ -42,6 +44,7 @@
+ #include <Library/HandleParsingLib.h>
+ #include <Library/FileHandleLib.h>
+ #include <Library/UefiHiiServicesLib.h>
++#include <Library/SecureBootVariableLib.h>
+ 
+ #include "ShellParametersProtocol.h"
+ #include "ShellProtocol.h"
+diff --git a/ShellPkg/Application/Shell/Shell.inf b/ShellPkg/Application/Shell/Shell.inf
+index f1e41de133..340585f284 100644
+--- a/ShellPkg/Application/Shell/Shell.inf
++++ b/ShellPkg/Application/Shell/Shell.inf
+@@ -47,6 +47,7 @@
+   MdePkg/MdePkg.dec
+   ShellPkg/ShellPkg.dec
+   MdeModulePkg/MdeModulePkg.dec
++  SecurityPkg/SecurityPkg.dec
+ 
+ [LibraryClasses]
+   BaseLib
+@@ -66,6 +67,7 @@
+   SortLib
+   HandleParsingLib
+   UefiHiiServicesLib
++  SecureBootVariableLib
+ 
+ [Guids]
+   gShellVariableGuid                                      ## SOMETIMES_CONSUMES ## GUID
+diff --git a/ShellPkg/ShellPkg.dsc b/ShellPkg/ShellPkg.dsc
+index 557b0ec0f3..95f2c75b78 100644
+--- a/ShellPkg/ShellPkg.dsc
++++ b/ShellPkg/ShellPkg.dsc
+@@ -64,6 +64,7 @@
+   DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
+   DxeServicesLib|MdePkg/Library/DxeServicesLib/DxeServicesLib.inf
+   ReportStatusCodeLib|MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
++  SecureBootVariableLib|SecurityPkg/Library/SecureBootVariableLib/SecureBootVariableLib.inf
+ 
+ [LibraryClasses.ARM,LibraryClasses.AARCH64]
+   #
+-- 
+2.45.1
+
