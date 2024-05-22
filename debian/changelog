@@ -5,8 +5,13 @@ pve-edk2-firmware (4.2023.08-5) bookworm; urgency=medium
   * 添加示范用于构建的GOP和VBT
   * 使用CI自动构建，与发布
   * 修改EDK中OEM构建字符串
+  * 暂时移除补丁直接构建入gop和vbt支持
+  * 合并CVE补丁，解决构建中的警告
+  * 补丁修改gop为只创建空壳inf，不参与构建
+  * vbt同样修改为只创建空壳inf文件，不参与构建
+  * 在debian工作目录中移除不参与构建的gop相关，保留存档在主目录中
 
- -- Yaming OEM Proxmox <ymwlpoolc@qq.com>  Tue, 21 May 2024 06:33:30 +0000
+ -- Yaming OEM Proxmox <ymwlpoolc@qq.com>  Wed, 22 May 2024 11:16:21 +0800
 
 pve-edk2-firmware (4.2023.08-4) bookworm; urgency=medium
 

@@ -60,8 +60,6 @@ override_dh_auto_build: build-qemu-efi-aarch64 build-ovmf build-ovmf32 build-qem
 
 debian/setup-build-stamp:
 	cp -a debian/Logo.bmp MdeModulePkg/Logo/Logo.bmp
-	cp -a debian/IntelGopDriver.efi OvmfPkg/IntelGop/IntelGopDriver.efi
-	cp -a debian/Vbt.bin OvmfPkg/Vbt/Vbt.bin
 	set -e; . ./edksetup.sh; \
 	make -C BaseTools ARCH=$(EDK2_BUILD_ARCH)
 	touch $@
