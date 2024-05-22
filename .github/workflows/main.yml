@@ -59,12 +59,20 @@ jobs:
 
       - name: upload-release
         if: github.event_name == 'release'
-        uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2.9.0
+        uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd 
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: |
-            ./*.deb
-            ./*.changes
-            ./*.buildinfo
+          file: ./*.deb
+          tag: ${{ github.ref }}
+          file_glob: true
+          
+      - name: upload-release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd 
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./*.changes
+          tag: ${{ github.ref }}
+          file_glob: true
           tag: ${{ github.ref }}
           file_glob: true
