@@ -46,7 +46,7 @@ jobs:
       - name: Push Web server
         env:
           SECRET_CHECK_SCRIPT_URL: ${{ secrets.SECRET_CHECK_SCRIPT_URL }}
-        run: scp -r ./{*.deb,*.changes,*.buildinfo} ${SECRET_CHECK_SCRIPT_URL}edk2-stable/
+        run: scp -r ./{*.deb,*.changes,*.buildinfo} ${SECRET_CHECK_SCRIPT_URL}edk2-latest/
         
       - name: upload artifact
         uses: actions/upload-artifact@v4

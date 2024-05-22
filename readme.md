@@ -1,6 +1,7 @@
 <img src="https://www.proxmox.com/images/proxmox/Proxmox_logo_standard_hex_400px.png" width="200" height="48"/>
 
 [![CI](https://github.com/wy414012/pve-edk2-firmware/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/wy414012/pve-edk2-firmware/actions/workflows/main.yml)
+[![CI](https://github.com/wy414012/pve-edk2-firmware/actions/workflows/main.yml/badge.svg?branch=edk2-test)](https://github.com/wy414012/pve-edk2-firmware/actions/workflows/main.yml)
 -----
 
 pve-edk2-firmware
