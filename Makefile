@@ -52,7 +52,7 @@ dsc: $(DSC)
 
 .PHONY: submodule
 submodule:
-	git submodule update --init --recursive
+	test -e edk2/Maintainers.txt || git submodule update --init --recursive
 
 $(SRCDIR)/Readme.md: submodule
 
