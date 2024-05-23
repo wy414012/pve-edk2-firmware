@@ -2,7 +2,7 @@ pve-edk2-firmware (5.2024.02-2) bookworm; urgency=medium
 
   * 更新版本号为5.2024.02-2
 
- -- Yaming Network <ymwlpoolc@qq.com>  Wed, 22 May 2024 12:00:45 +0800
+ -- Yaming Network <ymwlpoolc@qq.com>  Thu, 23 May 2024 06:55:59 +0000
 
 pve-edk2-firmware (5.2024.02-1) bookworm; urgency=medium
 
