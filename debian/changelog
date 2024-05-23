@@ -1,5 +1,7 @@
 pve-edk2-firmware (4.2023.08-6) bookworm; urgency=medium
-  * 
+
+  * 更新当前版本号为4.2023.08-6
+
  -- Yaming OEM Proxmox <ymwlpoolc@qq.com>  Wed, 23 May 2024 11:16:21 +0800
 
 pve-edk2-firmware (4.2023.08-5) bookworm; urgency=medium
