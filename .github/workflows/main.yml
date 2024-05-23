@@ -17,7 +17,7 @@ env:
 jobs:
   build:
     name: edk2-test
-    runs-on: edk2-test
+    runs-on: 20H
     env:
       JOB_TYPE: BUILD
       HOMEBREW_NO_INSTALL_CLEANUP: 1
