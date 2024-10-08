@@ -46,7 +46,7 @@ jobs:
       - name: Push Web server
         env:
           SECRET_CHECK_SCRIPT_URL: ${{ secrets.SECRET_CHECK_SCRIPT_URL }}
-        run: rsync -avz ./pve-edk2-firmware* ${SECRET_CHECK_SCRIPT_URL}pve-edk2-latest/
+        run: rsync -avz --exclude 'pve-edk2-firmware-*/' ./pve-edk2-firmware* ${SECRET_CHECK_SCRIPT_URL}pve-edk2-latest/
         
       - name: upload artifact
         uses: actions/upload-artifact@v4
@@ -57,7 +57,7 @@ jobs:
             ./*.changes
             ./*.buildinfo
 
-      - name: 发布版本主要
+      - name: upload-release
         if: github.event_name == 'release'
         uses: svenstaro/upload-release-action@v2
         with:
