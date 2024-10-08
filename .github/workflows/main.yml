@@ -46,7 +46,7 @@ jobs:
       - name: Push Web server
         env:
           SECRET_CHECK_SCRIPT_URL: ${{ secrets.SECRET_CHECK_SCRIPT_URL }}
-        run: rsync -avz ./pve-edk2-firmware* ${SECRET_CHECK_SCRIPT_URL}pve-edk2-stable/
+        run: rsync -avz --exclude 'pve-edk2-firmware*/' ./pve-edk2-firmware* ${SECRET_CHECK_SCRIPT_URL}pve-edk2-stable/
         
       - name: upload artifact
         uses: actions/upload-artifact@v4
