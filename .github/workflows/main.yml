@@ -17,7 +17,7 @@ env:
 jobs:
   build:
     name: edk2-test
-    runs-on: 20H
+    runs-on: latest
     env:
       JOB_TYPE: BUILD
       HOMEBREW_NO_INSTALL_CLEANUP: 1
@@ -25,12 +25,18 @@ jobs:
     steps:
 
       - uses: actions/checkout@v4
+      - name: update sources.list
+        run:  sudo apt update
 
-      - name: update
-        run: sudo apt update
-
-      - name: install build
-        run: sudo apt install -y bc debhelper dosfstools dpkg gcc-aarch64-linux-gnu gcc-riscv64-linux-gnu iasl mtools nasm pve-qemu-kvm python3 python3-distutils python3-pexpect uuid-dev xorriso lintian
+      - name: install tools
+        run: sudo apt-get -y install devscripts equivs
+    
+      - name: install deps    
+        run: yes| sudo mk-build-deps --install
+        
+      - name: remove deps
+        run: yes| sudo mk-build-deps --install --remove
+      
       - name: make deb
         run: make
         
@@ -46,7 +52,7 @@ jobs:
       - name: Push Web server
         env:
           SECRET_CHECK_SCRIPT_URL: ${{ secrets.SECRET_CHECK_SCRIPT_URL }}
-        run: rsync -avz --exclude 'pve-edk2-firmware-*/' ./pve-edk2-firmware* ${SECRET_CHECK_SCRIPT_URL}pve-edk2-latest/
+        run: rsync -avz --exclude 'pve-edk2-firmware-*/' --exclude '*-build-deps*' ./pve-edk2-firmware* ${SECRET_CHECK_SCRIPT_URL}pve-edk2-latest/
         
       - name: upload artifact
         uses: actions/upload-artifact@v4
