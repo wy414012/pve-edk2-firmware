@@ -6,22 +6,11 @@ on:
   workflow_dispatch:
   release:
     types: [published]
-
-env:
-  PROJECT_TYPE: UEFI
-  FORCE_INSTALL: 1
-  HAS_OPENSSL_BUILD: 1
-  HAS_OPENSSL_W32BUILD: 0
-  WERROR: 1
-
+    
 jobs:
   build-stable:
     name: Debian linux
     runs-on: stable
-    env:
-      JOB_TYPE: BUILD
-      HOMEBREW_NO_INSTALL_CLEANUP: 1
-      HOMEBREW_NO_AUTO_UPDATE: 1
     steps:
       - uses: actions/checkout@v4
       - name: update sources.list
@@ -31,10 +20,10 @@ jobs:
         run: sudo apt-get -y install devscripts equivs
     
       - name: install deps    
-        run: yes| sudo mk-build-deps -i
+        run: yes | sudo mk-build-deps -i
         
       - name: remove deps
-        run: yes| sudo mk-build-deps -r
+        run: yes | sudo mk-build-deps -r
       
       - name: make deb
         run: make
