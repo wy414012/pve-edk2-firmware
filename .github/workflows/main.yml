@@ -7,21 +7,10 @@ on:
   release:
     types: [published]
 
-env:
-  PROJECT_TYPE: UEFI
-  FORCE_INSTALL: 1
-  HAS_OPENSSL_BUILD: 1
-  HAS_OPENSSL_W32BUILD: 0
-  WERROR: 1
-
 jobs:
   build:
     name: edk2-test
     runs-on: latest
-    env:
-      JOB_TYPE: BUILD
-      HOMEBREW_NO_INSTALL_CLEANUP: 1
-      HOMEBREW_NO_AUTO_UPDATE: 1
     steps:
 
       - uses: actions/checkout@v4
