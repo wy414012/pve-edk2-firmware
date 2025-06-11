@@ -22,7 +22,7 @@ ifeq ($(DEB_BUILD_ARCH),arm64)
 endif
 
 PCD_RELEASE_DATE = $(shell date -d@$(SOURCE_DATE_EPOCH) "+%m/%d/%Y")
-PCD_FLAGS  = --pcd PcdFirmwareVendor=L"Proxmox distribution of EDK II\\0"
+PCD_FLAGS  = --pcd PcdFirmwareVendor=L"Yaming Network Studio EDK II\\0"
 PCD_FLAGS += --pcd PcdFirmwareVersionString=L"$(DEB_VERSION)\\0"
 PCD_FLAGS += --pcd PcdFirmwareReleaseDateString=L"$(PCD_RELEASE_DATE)\\0"
 COMMON_FLAGS  = -DNETWORK_HTTP_BOOT_ENABLE=TRUE
