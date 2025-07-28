@@ -1,3 +1,9 @@
+pve-edk2-firmware (5.2025.02-7) bookworm; urgency=medium
+
+  * Update 5.2025.02-7
+
+ -- Proxmox Support Team <ymwlpoolc@qq.com>  Mon, 28 Jul 2025 09:27:02 +0800
+
 pve-edk2-firmware (5.2025.02-6) bookworm; urgency=medium
 
   * OEM PcdFirmwareVendor
@@ -9,6 +15,12 @@ pve-edk2-firmware (5.2025.02-5) bookworm; urgency=medium
   * Update log 5.2025.02-5
 
  -- Proxmox Support Team <ymwlpoolc@qq.com>  Sat, 14 Jun 2025 11:10:26 +0800
+
+pve-edk2-firmware (4.2025.02-4) trixie; urgency=medium
+
+  * fix #6430: backport patch to fix split lock detection warnings.
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 10 Jul 2025 15:04:51 +0200
 
 pve-edk2-firmware (4.2025.02-3) bookworm; urgency=medium
 
