@@ -1,3 +1,9 @@
+pve-edk2-firmware (5.2025.02-8) bookworm; urgency=medium
+
+  * 合并稳定版
+
+ -- Proxmox Support Team <ymwlpoolc@qq.com>  Mon, 04 Aug 2025 18:50:39 +0800
+
 pve-edk2-firmware (5.2025.02-7) bookworm; urgency=medium
 
   * Update 5.2025.02-7
