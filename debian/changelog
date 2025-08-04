@@ -1,20 +1,8 @@
-pve-edk2-firmware (5.2025.02-7) bookworm; urgency=medium
+pve-edk2-firmware (5.2025.02-8) trixie; urgency=medium
 
-  * Update 5.2025.02-7
+  * update trixie
 
- -- Proxmox Support Team <ymwlpoolc@qq.com>  Mon, 28 Jul 2025 09:27:02 +0800
-
-pve-edk2-firmware (5.2025.02-6) bookworm; urgency=medium
-
-  * OEM PcdFirmwareVendor
-
- -- Proxmox Support Team <ymwlpoolc@qq.com>  Sat, 14 Jun 2025 11:31:59 +0800
-
-pve-edk2-firmware (5.2025.02-5) bookworm; urgency=medium
-
-  * Update log 5.2025.02-5
-
- -- Proxmox Support Team <ymwlpoolc@qq.com>  Sat, 14 Jun 2025 11:10:26 +0800
+ -- Proxmox Support Team <ymwlpoolc@qq.com>  Mon, 04 Aug 2025 19:02:22 +0800
 
 pve-edk2-firmware (4.2025.02-4) trixie; urgency=medium
 
